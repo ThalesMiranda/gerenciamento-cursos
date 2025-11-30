@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Http\Controllers;
 
 use App\Models\Turma;
@@ -7,59 +8,68 @@ use Illuminate\Http\Request;
 
 class TurmaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $turmas = Turma::with(['curso', 'professor'])->get();
+        return response()->json($turmas, 200);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $validatedData = $request->validate([
+            'codigo' => 'required|string|max:50|unique:turmas,codigo',
+            'data_inicio' => 'required|date',
+            'data_fim' => 'required|date|after_or_equal:data_inicio',
+            'curso_id' => 'required|exists:cursos,id',
+            'professor_id' => 'nullable|exists:professors,id', 
+        ]);
+
+        $turma = Turma::create($validatedData);
+
+        return response()->json($turma, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Turma $turma)
+    public function show(string $id)
     {
-        //
+        $turma = Turma::with(['alunos', 'curso', 'professor'])->find($id);
+
+        if (!$turma) {
+            return response()->json(['message' => 'Turma não encontrada.'], 404);
+        }
+        
+        return response()->json($turma, 200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Turma $turma)
-    {
-        //
-    }
+    public function update(Request $request, string $id)
+        {
+            $turma = Turma::find($id);
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Turma $turma)
-    {
-        //
-    }
+            if (!$turma) {
+                return response()->json(['message' => 'Turma não encontrada para atualização.'], 404);
+            }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Turma $turma)
-    {
-        //
-    }
+            $validatedData = $request->validate([
+                'codigo' => 'required|string|max:50|unique:turmas,codigo,' . $turma->id,
+                'data_inicio' => 'required|date',
+                'data_fim' => 'required|date|after_or_equal:data_inicio',
+                'curso_id' => 'required|exists:cursos,id',
+                'professor_id' => 'nullable|exists:professors,id',
+            ]);
+
+            $turma->update($validatedData);
+
+            return response()->json($turma, 200);
+        }
+
+        public function destroy(string $id)
+        {
+            $turma = Turma::find($id);
+
+            if (!$turma) {
+                return response()->json(['message' => 'Turma não encontrada para exclusão.'], 404);
+            }
+            
+            $turma->delete();
+            return response()->json(null, 204);
+        }
 }

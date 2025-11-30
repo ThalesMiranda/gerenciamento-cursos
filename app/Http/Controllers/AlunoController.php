@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Http\Controllers;
 
 use App\Models\Aluno;
@@ -7,59 +8,66 @@ use Illuminate\Http\Request;
 
 class AlunoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $alunos = Aluno::all();
+        return response()->json($alunos, 200);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $validatedData = $request->validate([
+            'nome' => 'required|string|max:150',
+            'cpf' => 'required|string|size:11|unique:alunos,cpf', 
+            'email' => 'required|email|max:150|unique:alunos,email',
+            'data_nascimento' => 'nullable|date',
+        ]);
+
+        $aluno = Aluno::create($validatedData);
+
+        return response()->json($aluno, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Aluno $aluno)
+public function show(string $id)
     {
-        //
+        $aluno = Aluno::find($id);
+        
+        if (!$aluno) {
+            return response()->json(['message' => 'Aluno não encontrado.'], 404);
+        }
+        
+        return response()->json($aluno, 200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Aluno $aluno)
+    public function update(Request $request, string $id)
     {
-        //
+        $aluno = Aluno::find($id);
+
+        if (!$aluno) {
+            return response()->json(['message' => 'Aluno não encontrado para atualização.'], 404);
+        }
+
+        $validatedData = $request->validate([
+            'nome' => 'required|string|max:150',
+            'cpf' => 'required|string|size:11|unique:alunos,cpf,' . $aluno->id, 
+            'email' => 'required|email|max:150|unique:alunos,email,' . $aluno->id,
+            'data_nascimento' => 'nullable|date',
+        ]);
+
+        $aluno->update($validatedData);
+
+        return response()->json($aluno, 200);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Aluno $aluno)
+    public function destroy(string $id)
     {
-        //
-    }
+        $aluno = Aluno::find($id);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Aluno $aluno)
-    {
-        //
+        if (!$aluno) {
+            return response()->json(['message' => 'Aluno não encontrado para exclusão.'], 404);
+        }
+        
+        $aluno->delete();
+        return response()->json(null, 204);
     }
 }
